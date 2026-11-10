@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import AuthPanel from "./AuthPanel.jsx";
 
 const SYMBOLS = Array.from({ length: 28 }, (_, index) => index);
 const LEVELS = {
@@ -107,7 +108,7 @@ export default function App() {
     <div className="page">
       <nav className="topbar" aria-label="Cabeçalho">
         <div className="brand"><div className="brand-mark">✦</div><span>MEMORY<span>PLAY</span></span></div>
-        <div className="top-tag">Arcade de concentração</div>
+        <div className="topbar-right"><div className="top-tag">Arcade de concentração</div><AuthPanel /></div>
       </nav>
 
       <header className="hero">
@@ -152,7 +153,7 @@ export default function App() {
                 >
                   <span className="card-inner">
                     <span className="face back" aria-hidden="true">✦</span>
-                    <span className="face front"><img className="card-image" src={`/cards/card-${card.symbol + 1}.svg`} alt={card.symbol < 14 ? "Selo alquímico inspirado em Fullmetal Alchemist" : "Personagem chibi inspirado em Fullmetal Alchemist"} loading="eager" decoding="async" /></span>
+                    <span className="face front"><img className="card-image" src={`/cards/card-${card.symbol + 1}.svg`} alt={card.symbol < 16 ? "Selo alquímico inspirado em Fullmetal Alchemist" : "Personagem chibi inspirado em Fullmetal Alchemist"} loading="eager" decoding="async" /></span>
                   </span>
                 </button>
               );

@@ -1,81 +1,34 @@
-# MemoryPlay 🎮
+# MemoryPlay
 
-Jogo da memória desenvolvido com **React + Vite**, com interface inspirada em uma nebulosa vermelha. O projeto usa componentes React e CSS próprio.
+React + Vite frontend with a local Node.js + Express + SQLite authentication backend.
 
-## Requisitos
-
-- Node.js 18 ou superior
+## Requirements
+- Node.js 20+
 - npm
 
-## Executar localmente
-
-1. Baixe o repositório em **Code → Download ZIP** e extraia, ou clone:
-
-   ```bash
-   git clone https://github.com/JoaoGabriel369/memoryplay.git
-   cd memoryplay
-   ```
-
-2. Instale as dependências:
-
-   ```bash
-   npm install
-   ```
-
-3. Inicie o servidor de desenvolvimento:
-
-   ```bash
-   npm run dev
-   ```
-
-4. Abra no navegador o endereço exibido pelo Vite (normalmente http://localhost:5173).
-
-O servidor atualiza a página automaticamente quando você altera os arquivos.
-
-## Outros comandos
-
-- `npm run build` — gera a versão de produção na pasta `dist`.
-- `npm run preview` — testa localmente a versão compilada.
-
-## Publicar no Cloudflare Pages
-
-Configure o projeto conectado ao GitHub com:
-
-- **Framework preset:** Vite
-- **Build command:** `npm run build`
-- **Build output directory:** `dist`
-- **Root directory:** `/`
-
-## Como jogar
-
-- **Fácil:** 8 pares (16 cartas).
-- **Médio:** 12 pares (24 cartas).
-- **Difícil:** 18 pares (36 cartas).
-- Encontre todos os pares e tente bater seu recorde.
-- O recorde de cada nível é salvo no armazenamento local do navegador.
-
-
-## Publicar no Cloudflare Pages
-
-O projeto usa Vite. Configure o Cloudflare Pages com:
-
-- **Framework preset:** Vite
-- **Build command:** `npm run build`
-- **Build output directory:** `dist`
-- **Root directory:** `/`
-
-O arquivo `wrangler.toml` também declara `dist` como diretório de publicação. Não configure a pasta raiz do repositório como diretório de saída.
-
-Para testar localmente:
-
+## Run locally
 ```bash
+git clone https://github.com/JoaoGabriel369/memoryplay.git
+cd memoryplay
 npm install
 npm run dev
-```
+``
+Open the Vite URL (usually http://localhost:5173). Vite proxies /api requests to Express at http://127.0.0.1:3001. SQLite database is created automatically at data/memoryplay.sqlite.
 
-Para validar a versão de produção:
+## Local authentication
+- Register with name, email and password (8+ characters).
+- Log in using email and password.
+- Passwords are hashed with bcryptjs.
+- Session IDs are random, stored as hashes in SQLite, and sent in HttpOnly SameSite=Lax cookies.
+- Users and sessions persist in the local SQLite file.
 
-```bash
-npm run build
-npm run preview
-```
+This backend is for local development only. Before public production use, add HTTPS, CSRF protection, rate limiting, secure deployment secrets, and persistent database hosting.
+
+## Commands
+- npm run dev — start API and Vite together.
+- npm run server — start only Express.
+- npm run vite — start only Vite.
+- npm run build — production frontend build.
+- npm run preview — preview the build.
+
+Cloudflare Pages currently deploys only the static frontend. The Express/SQLite API is local in this stage.
