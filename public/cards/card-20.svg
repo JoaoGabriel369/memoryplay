@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" role="img" aria-label="Personagem chibi inspirado em Fullmetal Alchemist"><g transform="translate(-640,-256)">
+ <circle cx="64" cy="64" r="57" fill="#19070d" stroke="#a51e34" stroke-width="4"/>
+ <circle cx="64" cy="64" r="51" fill="none" stroke="#ff5c60" stroke-width="2"/>
+ <path d="M22 120Q24 83 64 82Q104 83 106 120Z" fill="#6d5543" stroke="#0a0a12" stroke-width="2"/>
+ <path d="M39 49Q37 22 64 20Q92 21 90 51L86 79Q64 97 42 78Z" fill="#8b674d" stroke="#8e574a" stroke-width="2"/>
+ <path d="M35 51Q25 18 57 15Q91 9 96 43L88 39L81 29L72 43L63 30L51 45L42 36Z" fill="#b88a52" stroke="#0a0a12" stroke-width="2"/>
+ <path d="M47 58L57 58M72 58L82 58" stroke="#21151b" stroke-width="3" stroke-linecap="round"/>
+ <circle cx="53" cy="61" r="2.4" fill="#fff"/><circle cx="77" cy="61" r="2.4" fill="#fff"/>
+ <path d="M59 75Q64 78 69 75" fill="none" stroke="#9e4f48" stroke-width="2" stroke-linecap="round"/>
+ 
+ 
+ <path d="M48 89L64 101L80 89" fill="none" stroke="#e7c4b0" stroke-width="3"/>
+ </g></svg>

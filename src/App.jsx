@@ -152,7 +152,7 @@ export default function App() {
                 >
                   <span className="card-inner">
                     <span className="face back" aria-hidden="true">✦</span>
-                    <span className="face front card-image" role="img" aria-label={card.symbol < 14 ? "Selo alquímico inspirado em Fullmetal Alchemist" : "Personagem chibi inspirado em Fullmetal Alchemist"} style={{ backgroundImage: 'url("/cards.svg")', backgroundPosition: `${(card.symbol % 7) * (100 / 6)}% ${Math.floor(card.symbol / 7) * (100 / 3)}%` }} />
+                    <span className="face front"><img className="card-image" src={`/cards/card-${card.symbol + 1}.svg`} alt={card.symbol < 14 ? "Selo alquímico inspirado em Fullmetal Alchemist" : "Personagem chibi inspirado em Fullmetal Alchemist"} loading="eager" decoding="async" /></span>
                   </span>
                 </button>
               );

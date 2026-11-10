@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" role="img" aria-label="Selo alquímico inspirado em Fullmetal Alchemist"><g transform="translate(-384,-128)">
+ <circle cx="64" cy="64" r="57" fill="#17070d" stroke="#9e1d31" stroke-width="4"/>
+ <circle cx="64" cy="64" r="51" fill="none" stroke="#ff655d" stroke-width="1.5" opacity=".9"/>
+ <g fill="none" stroke="#ffb0a0" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="64" cy="64" r="51"/><circle cx="64" cy="64" r="28"/><path d="M64 13V115M13 64H115"/></g>
+ <circle cx="64" cy="64" r="4" fill="#fff0df"/>
+ </g></svg>
