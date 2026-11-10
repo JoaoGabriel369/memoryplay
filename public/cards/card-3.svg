@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512" viewBox="200 0 100 100" role="img" aria-label="Selo alquímico 3"><image href="/cards.webp" xlink:href="/cards.webp" x="0" y="0" width="700" height="400" preserveAspectRatio="none"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" role="img" aria-label="Ícone alquímico 3">
+ <circle cx="64" cy="64" r="57" fill="#17070d" stroke="#9e1d31" stroke-width="4"/>
+ <circle cx="64" cy="64" r="51" fill="none" stroke="#ff655d" stroke-width="1.5" opacity=".9"/>
+ <g fill="none" stroke="#ffb0a0" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M64 16L75 48L108 48L82 68L92 102L64 82L36 102L46 68L20 48L53 48Z"/></g>
+ <circle cx="64" cy="64" r="4" fill="#fff0df"/>
+ </svg>
