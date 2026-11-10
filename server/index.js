@@ -1,36 +1,8 @@
+import "dotenv/config";
 import express from "express";
-import Database from "better-sqlite3";
-import bcrypt from "bcryptjs";
-import { randomBytes, createHash } from "node:crypto";
-import { mkdirSync } from "node:fs";
+import { createClient } from "@supabase/supabase-js";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const dataDir = resolve(process.env.DATA_DIR || resolve(here, "../data"));
-mkdirSync(dataDir, { recursive: true });
-const db = new Database(resolve(dataDir, "memoryplay.sqlite"));
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL COLLATE NOCASE UNIQUE,
-    password_hash TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE TABLE IF NOT EXISTS sessions (
-    token_hash TEXT PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    expires_at INTEGER NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions(user_id);
-`);
-db.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(Date.now());
 
 const app = express();
 app.disable("x-powered-by");
@@ -38,67 +10,99 @@ app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: "10kb" }));
 
-const SESSION_COOKIE = "memoryplay_session";
-const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+const configured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 const isProduction = process.env.NODE_ENV === "production";
-const cookieOptions = { httpOnly: true, sameSite: "lax", secure: isProduction, path: "/" };
+const ACCESS_COOKIE = "memoryplay_access";
+const REFRESH_COOKIE = "memoryplay_refresh";
+const COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax", secure: isProduction, path: "/" };
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30 * 1000;
 
-function hashToken(token) {
-  return createHash("sha256").update(token).digest("hex");
+function authClient() {
+  if (!configured) throw new Error("Supabase não está configurado no servidor.");
+  return createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
 }
 
-function parseCookie(header = "", name) {
-  const part = header.split(";").map((value) => value.trim()).find((value) => value.startsWith(name + "="));
-  return part ? decodeURIComponent(part.slice(name.length + 1)) : null;
+function parseCookies(header = "") {
+  return Object.fromEntries(header.split(";").map((part) => {
+    const index = part.indexOf("=");
+    if (index < 0) return ["", ""];
+    return [part.slice(0, index).trim(), decodeURIComponent(part.slice(index + 1).trim())];
+  }).filter(([key]) => key));
 }
 
-function setSession(res, userId) {
-  const token = randomBytes(32).toString("hex");
-  const expiresAt = Date.now() + SESSION_TTL;
-  db.prepare("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)")
-    .run(hashToken(token), userId, expiresAt);
-  res.cookie(SESSION_COOKIE, token, { ...cookieOptions, maxAge: SESSION_TTL });
+function setSessionCookies(res, session) {
+  const accessMaxAge = Math.max(60_000, Math.min(SESSION_MAX_AGE, (session.expires_in || 3600) * 1000));
+  res.cookie(ACCESS_COOKIE, session.access_token, { ...COOKIE_OPTIONS, maxAge: accessMaxAge });
+  res.cookie(REFRESH_COOKIE, session.refresh_token, { ...COOKIE_OPTIONS, maxAge: SESSION_MAX_AGE });
 }
 
-function currentUser(req) {
-  const token = parseCookie(req.headers.cookie, SESSION_COOKIE);
-  if (!token) return null;
-  const tokenHash = hashToken(token);
-  const row = db.prepare(`
-    SELECT users.id, users.name, users.email, sessions.expires_at
-    FROM sessions JOIN users ON users.id = sessions.user_id
-    WHERE sessions.token_hash = ?
-  `).get(tokenHash);
-  if (!row || row.expires_at <= Date.now()) {
-    db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(tokenHash);
+function clearSessionCookies(res) {
+  res.clearCookie(ACCESS_COOKIE, COOKIE_OPTIONS);
+  res.clearCookie(REFRESH_COOKIE, COOKIE_OPTIONS);
+}
+
+async function getAuthenticatedUser(req, res) {
+  const cookies = parseCookies(req.headers.cookie);
+  if (!cookies[ACCESS_COOKIE] || !cookies[REFRESH_COOKIE]) return null;
+  const client = authClient();
+  const { data: sessionData, error: sessionError } = await client.auth.setSession({
+    access_token: cookies[ACCESS_COOKIE],
+    refresh_token: cookies[REFRESH_COOKIE],
+  });
+  if (sessionError || !sessionData.session) {
+    clearSessionCookies(res);
     return null;
   }
-  return { id: row.id, name: row.name, email: row.email };
+  const session = sessionData.session;
+  if (session.access_token !== cookies[ACCESS_COOKIE] || session.refresh_token !== cookies[REFRESH_COOKIE]) {
+    setSessionCookies(res, session);
+  }
+  const { data, error } = await client.auth.getUser(session.access_token);
+  if (error || !data.user) {
+    clearSessionCookies(res);
+    return null;
+  }
+  return {
+    id: data.user.id,
+    name: data.user.user_metadata?.name || data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "Jogador",
+    email: data.user.email,
+  };
 }
 
-function publicUser(user) {
-  return { id: user.id, name: user.name, email: user.email };
-}
-
-function clearSession(req, res) {
-  const token = parseCookie(req.headers.cookie, SESSION_COOKIE);
-  if (token) db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(hashToken(token));
-  res.clearCookie(SESSION_COOKIE, cookieOptions);
-}
-
-app.get("/api/health", (_req, res) => {
-  try { db.prepare("SELECT 1").get(); return res.json({ ok: true, database: "sqlite" }); }
-  catch { return res.status(503).json({ ok: false, database: "unavailable" }); }
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Muitas tentativas. Aguarde 15 minutos e tente novamente." },
 });
-
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: "draft-7", legacyHeaders: false, message: { error: "Muitas tentativas. Aguarde 15 minutos e tente novamente." } });
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 
-app.get("/api/auth/me", (req, res) => {
-  const user = currentUser(req);
-  if (!user) return res.status(401).json({ error: "Não autenticado." });
-  return res.json({ user });
+app.get("/api/health", async (_req, res) => {
+  if (!configured) return res.status(503).json({ ok: false, backend: "online", supabase: "not_configured" });
+  try {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/health`, {
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return res.status(503).json({ ok: false, backend: "online", supabase: "unavailable", status: response.status });
+    return res.json({ ok: true, backend: "online", database: "supabase-postgres", auth: "reachable" });
+  } catch {
+    return res.status(503).json({ ok: false, backend: "online", supabase: "unreachable" });
+  }
+});
+
+app.get("/api/auth/me", async (req, res, next) => {
+  try {
+    const user = await getAuthenticatedUser(req, res);
+    if (!user) return res.status(401).json({ error: "Não autenticado." });
+    return res.json({ user });
+  } catch (error) { return next(error); }
 });
 
 app.post("/api/auth/register", async (req, res, next) => {
@@ -107,42 +111,63 @@ app.post("/api/auth/register", async (req, res, next) => {
     const email = String(req.body?.email || "").trim().toLowerCase();
     const password = String(req.body?.password || "");
     if (name.length < 2 || name.length > 40) return res.status(400).json({ error: "O nome deve ter entre 2 e 40 caracteres." });
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: "Informe um e-mail válido." });
-    if (password.length < 8 || Buffer.byteLength(password, "utf8") > 72) return res.status(400).json({ error: "A senha deve ter entre 8 e 72 bytes." });
-    const passwordHash = await bcrypt.hash(password, 12);
-    let result;
-    try {
-      result = db.prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)").run(name, email, passwordHash);
-    } catch (error) {
-      if (error.code === "SQLITE_CONSTRAINT_UNIQUE") return res.status(409).json({ error: "Este e-mail já está cadastrado." });
-      throw error;
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: "Informe um e-mail válido." });
+    if (password.length < 8 || new TextEncoder().encode(password).length > 72) return res.status(400).json({ error: "A senha deve ter entre 8 e 72 bytes." });
+    const { data, error } = await authClient().auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
+    if (error) {
+      const status = error.status === 422 ? 409 : (error.status || 400);
+      return res.status(status).json({ error: error.message || "Não foi possível criar a conta." });
     }
-    const user = db.prepare("SELECT id, name, email FROM users WHERE id = ?").get(result.lastInsertRowid);
-    setSession(res, user.id);
-    return res.status(201).json({ user: publicUser(user) });
-  } catch (error) {
-    return next(error);
-  }
+    if (data.session) {
+      setSessionCookies(res, data.session);
+      return res.status(201).json({ user: { id: data.user.id, name, email: data.user.email } });
+    }
+    return res.status(202).json({
+      confirmationRequired: true,
+      message: "Conta criada. Verifique seu e-mail para confirmar o cadastro antes de entrar.",
+    });
+  } catch (error) { return next(error); }
 });
 
 app.post("/api/auth/login", async (req, res, next) => {
   try {
     const email = String(req.body?.email || "").trim().toLowerCase();
     const password = String(req.body?.password || "");
-    const user = db.prepare("SELECT id, name, email, password_hash FROM users WHERE email = ?").get(email);
-    const fallbackHash = "$2a$12$C6UzMDM.H6dfI/f/IKcEe.7Z7k7r8zN8q3x8jQmQ0b1h1G7uG5K5K";
-    const valid = await bcrypt.compare(password, user?.password_hash || fallbackHash);
-    if (!user || !valid) return res.status(401).json({ error: "E-mail ou senha incorretos." });
-    setSession(res, user.id);
-    return res.json({ user: publicUser(user) });
-  } catch (error) {
-    return next(error);
-  }
+    if (!email || !password) return res.status(400).json({ error: "Informe e-mail e senha." });
+    const { data, error } = await authClient().auth.signInWithPassword({ email, password });
+    if (error || !data.session || !data.user) return res.status(401).json({ error: "E-mail ou senha incorretos. Se acabou de se cadastrar, confirme seu e-mail." });
+    setSessionCookies(res, data.session);
+    return res.json({
+      user: {
+        id: data.user.id,
+        name: data.user.user_metadata?.name || data.user.user_metadata?.full_name || data.user.email.split("@")[0],
+        email: data.user.email,
+      },
+    });
+  } catch (error) { return next(error); }
 });
 
-app.post("/api/auth/logout", (req, res) => {
-  clearSession(req, res);
-  return res.json({ ok: true });
+app.post("/api/auth/logout", async (req, res, next) => {
+  try {
+    const cookies = parseCookies(req.headers.cookie);
+    if (cookies[ACCESS_COOKIE] && cookies[REFRESH_COOKIE] && configured) {
+      const client = authClient();
+      const { data } = await client.auth.setSession({
+        access_token: cookies[ACCESS_COOKIE],
+        refresh_token: cookies[REFRESH_COOKIE],
+      });
+      if (data.session) await client.auth.signOut({ scope: "local" });
+    }
+    clearSessionCookies(res);
+    return res.json({ ok: true });
+  } catch (error) {
+    clearSessionCookies(res);
+    return next(error);
+  }
 });
 
 app.use((error, _req, res, _next) => {
@@ -152,6 +177,6 @@ app.use((error, _req, res, _next) => {
 
 const port = Number(process.env.PORT || process.env.API_PORT || 3001);
 app.listen(port, "0.0.0.0", () => {
-  console.log("MemoryPlay API escutando na porta " + port);
-  console.log("Banco SQLite: " + resolve(dataDir, "memoryplay.sqlite"));
+  console.log(`MemoryPlay API escutando na porta ${port}`);
+  console.log(configured ? "Autenticação Supabase configurada." : "AVISO: configure SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY.");
 });
