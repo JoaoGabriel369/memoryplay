@@ -3,11 +3,13 @@ import Database from "better-sqlite3";
 import bcrypt from "bcryptjs";
 import { randomBytes, createHash } from "node:crypto";
 import { mkdirSync } from "node:fs";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dataDir = resolve(here, "../data");
+const dataDir = resolve(process.env.DATA_DIR || resolve(here, "../data"));
 mkdirSync(dataDir, { recursive: true });
 const db = new Database(resolve(dataDir, "memoryplay.sqlite"));
 db.pragma("journal_mode = WAL");
@@ -32,6 +34,8 @@ db.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(Date.now());
 
 const app = express();
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: "10kb" }));
 
 const SESSION_COOKIE = "memoryplay_session";
@@ -82,7 +86,14 @@ function clearSession(req, res) {
   res.clearCookie(SESSION_COOKIE, cookieOptions);
 }
 
-app.get("/api/health", (_req, res) => res.json({ ok: true, database: "sqlite" }));
+app.get("/api/health", (_req, res) => {
+  try { db.prepare("SELECT 1").get(); return res.json({ ok: true, database: "sqlite" }); }
+  catch { return res.status(503).json({ ok: false, database: "unavailable" }); }
+});
+
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: "draft-7", legacyHeaders: false, message: { error: "Muitas tentativas. Aguarde 15 minutos e tente novamente." } });
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
 
 app.get("/api/auth/me", (req, res) => {
   const user = currentUser(req);
@@ -139,8 +150,8 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ error: "Erro interno do servidor." });
 });
 
-const port = Number(process.env.API_PORT || 3001);
-app.listen(port, "127.0.0.1", () => {
-  console.log("MemoryPlay API disponível em http://127.0.0.1:" + port);
+const port = Number(process.env.PORT || process.env.API_PORT || 3001);
+app.listen(port, "0.0.0.0", () => {
+  console.log("MemoryPlay API escutando na porta " + port);
   console.log("Banco SQLite: " + resolve(dataDir, "memoryplay.sqlite"));
 });
