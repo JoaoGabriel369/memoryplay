@@ -1,9 +1,18 @@
 {
   "name": "memoryplay",
-  "version": "1.0.0",
   "private": true,
-  "description": "Jogo da memória estático em HTML, CSS e JavaScript puro",
+  "version": "2.0.0",
+  "type": "module",
   "scripts": {
-    "build": "node -e \"const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true});fs.mkdirSync('dist');for(const file of ['index.html','nebula.svg'])fs.copyFileSync(file,'dist/'+file);console.log('MemoryPlay pronto para publicação em dist/')\""
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.14"
   }
 }
