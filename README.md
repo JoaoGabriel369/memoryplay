@@ -1,56 +1,55 @@
 # MemoryPlay 🎮
 
-Jogo da memória interativo feito com HTML, CSS e JavaScript puro. Não precisa instalar dependências.
+Jogo da memória desenvolvido com **React + Vite**, com interface inspirada em uma nebulosa vermelha. O projeto usa componentes React e CSS próprio.
 
-## Como executar localmente
+## Requisitos
 
-1. Baixe o repositório (botão **Code → Download ZIP**) e extraia o arquivo, ou clone com:
+- Node.js 18 ou superior
+- npm
+
+## Executar localmente
+
+1. Baixe o repositório em **Code → Download ZIP** e extraia, ou clone:
 
    ```bash
    git clone https://github.com/JoaoGabriel369/memoryplay.git
    cd memoryplay
    ```
 
-2. Abra o arquivo `index.html` no navegador.
+2. Instale as dependências:
 
-### Opcional: executar com servidor local
+   ```bash
+   npm install
+   ```
 
-Dentro da pasta do projeto, execute:
+3. Inicie o servidor de desenvolvimento:
 
-```bash
-python -m http.server 8000
-```
+   ```bash
+   npm run dev
+   ```
 
-Depois acesse http://localhost:8000.
+4. Abra no navegador o endereço exibido pelo Vite (normalmente http://localhost:5173).
 
-No Windows, também é possível usar:
+O servidor atualiza a página automaticamente quando você altera os arquivos.
 
-```bash
-py -m http.server 8000
-```
+## Outros comandos
+
+- `npm run build` — gera a versão de produção na pasta `dist`.
+- `npm run preview` — testa localmente a versão compilada.
+
+## Publicar no Cloudflare Pages
+
+Configure o projeto conectado ao GitHub com:
+
+- **Framework preset:** Vite
+- **Build command:** `npm run build`
+- **Build output directory:** `dist`
+- **Root directory:** `/`
 
 ## Como jogar
 
 - **Fácil:** 8 pares (16 cartas).
 - **Médio:** 12 pares (24 cartas).
 - **Difícil:** 18 pares (36 cartas).
-- Encontre os pares, acompanhe jogadas e tempo e tente bater seu recorde.
-- O recorde de cada nível fica salvo no navegador deste dispositivo.
-
-## Tecnologias
-
-HTML5, CSS3 e JavaScript (sem frameworks ou dependências externas).
-
-
-## Publicar no Cloudflare Pages
-
-O projeto continua sendo um site estático, mas agora possui um script de build compatível com o fluxo do Cloudflare Pages.
-
-Nas configurações de build do projeto, use:
-
-- **Framework preset:** None (Nenhum)
-- **Build command:** `npm run build`
-- **Build output directory:** `dist`
-- **Root directory:** `/` (raiz do repositório)
-
-O script cria a pasta `dist` e copia para ela o `index.html` e o `nebula.svg`. Não instala dependências externas.
+- Encontre todos os pares e tente bater seu recorde.
+- O recorde de cada nível é salvo no armazenamento local do navegador.
