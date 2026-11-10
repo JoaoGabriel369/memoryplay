@@ -1,53 +1,70 @@
 # MemoryPlay
 
-MemoryPlay is a React + Vite memory game with an Express authentication API and SQLite persistence.
+Jogo da memória em React + Vite, com API Express e autenticação hospedada no Supabase.
 
-## Local development
+## Desenvolvimento local
 
-Requirements: Node.js 20+ and npm.
+Requisitos: Node.js 20+ e npm.
 
 ```bash
 git clone https://github.com/JoaoGabriel369/memoryplay.git
 cd memoryplay
 npm install
+cp .env.example .env
+# Preencha SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY no .env
 npm run dev
 ```
 
-Open http://localhost:5173. Vite proxies `/api` to Express on port 3001. Local SQLite file: `data/memoryplay.sqlite`.
+Abra http://localhost:5173. O Vite encaminha `/api` para o Express na porta 3001. O login local já usa o mesmo projeto Supabase de produção; não existe mais banco SQLite local para autenticação.
 
-## Production architecture
+## Arquitetura hospedada
 
-- **Cloudflare Pages:** React/Vite frontend (build: `npm run build`, output: `dist`).
-- **Cloudflare Pages Function:** `functions/api/[[path]].js` reverse-proxies same-origin `/api/*` requests to Railway. Configure the Pages production and preview variable `API_ORIGIN` with the Railway service origin, e.g. `https://your-api.up.railway.app` (no trailing slash).
-- **Railway:** Express API. Start command: `npm start`; healthcheck: `/api/health`.
-- **SQLite:** attach a Railway persistent volume at `/data` and set `DATA_DIR=/data`. Do not use ephemeral container storage for production data.
+- **GitHub:** repositório central `JoaoGabriel369/memoryplay`, branch `main`.
+- **Cloudflare Pages:** frontend React/Vite, build `npm run build`, diretório `dist`. A Function `functions/api/[[path]].js` encaminha chamadas same-origin `/api/*` ao Railway.
+- **Railway:** API Express, comando `npm start`, healthcheck `/api/health`.
+- **Supabase:** Supabase Auth armazena contas e autentica senhas; PostgreSQL é o banco gerenciado do projeto.
 
-Railway service variables:
+### Variáveis do Railway
+
+Configure no serviço da API:
+
 - `NODE_ENV=production`
-- `DATA_DIR=/data`
-- `PORT` is provided by Railway automatically.
+- `SUPABASE_URL=https://aaqaxwbvyaptwkzfhcjk.supabase.co`
+- `SUPABASE_PUBLISHABLE_KEY=sb_publishable_...`
 
-Cloudflare Pages project:
-- Repository: `JoaoGabriel369/memoryplay`
-- Branch: `main`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Environment variable: `API_ORIGIN=https://<railway-api-domain>`
+O Railway fornece `PORT` automaticamente. A chave publishable não é uma chave administrativa; nunca coloque uma secret/service-role key no frontend.
 
-## Authentication and operational safeguards
+### Variáveis do Cloudflare Pages
 
-- Passwords are hashed with bcrypt.
-- Session identifiers are random; only their SHA-256 hashes are stored in SQLite.
-- Session cookies are HttpOnly, SameSite=Lax and Secure in production.
-- Helmet security headers are enabled.
-- Login and registration have a basic IP rate limit.
-- `GET /api/health` checks both the API process and SQLite query availability.
+Em Settings > Environment variables, configure para Production e Preview:
 
-## Commands
+- `API_ORIGIN=https://<dominio-publico-do-servico-railway>`
 
-- `npm run dev` — run frontend and API locally.
-- `npm start` — run the production API.
-- `npm run build` — build the frontend.
-- `npm run preview` — preview the frontend build locally.
+O valor não deve terminar com barra. O Pages Function encaminha cookies HttpOnly entre o navegador e a API.
 
-Before handling real users at scale, add automated integration tests, account recovery/email verification, monitoring/alerts, and a tested backup/restore process for the SQLite volume.
+### Supabase Auth
+
+No Dashboard do projeto, em Authentication > URL Configuration:
+- Site URL: `https://memoryplay.pages.dev`
+- Redirect URLs: `https://memoryplay.pages.dev/**` e `http://localhost:5173/**`
+
+Se a confirmação de e-mail estiver ativada, novos usuários precisam confirmar o endereço antes do primeiro login.
+
+## Segurança
+
+- Senhas são processadas e armazenadas pelo Supabase Auth, não pelo MemoryPlay.
+- Sessões são entregues em cookies HttpOnly, Secure em produção e SameSite=Lax.
+- A API usa Helmet e limitação de tentativas de login/cadastro.
+- Nenhuma chave administrativa do Supabase é usada ou exposta.
+- `GET /api/health` verifica o backend e a disponibilidade do endpoint de autenticação Supabase.
+
+## Comandos
+
+- `npm run dev` — frontend e API local.
+- `npm start` — API para produção.
+- `npm run build` — build do frontend.
+- `npm run preview` — prévia do build.
+
+### Sobre contas antigas do SQLite
+
+O banco SQLite ficava no computador onde o jogo foi executado e não está no repositório. Não é possível migrar essas senhas automaticamente sem o arquivo local. Os usuários antigos devem criar/confirmar uma conta no Supabase; não copie arquivos SQLite nem hashes de senha para o GitHub.
