@@ -53,3 +53,29 @@ Configure o projeto conectado ao GitHub com:
 - **Difícil:** 18 pares (36 cartas).
 - Encontre todos os pares e tente bater seu recorde.
 - O recorde de cada nível é salvo no armazenamento local do navegador.
+
+
+## Publicar no Cloudflare Pages
+
+O projeto usa Vite. Configure o Cloudflare Pages com:
+
+- **Framework preset:** Vite
+- **Build command:** `npm run build`
+- **Build output directory:** `dist`
+- **Root directory:** `/`
+
+O arquivo `wrangler.toml` também declara `dist` como diretório de publicação. Não configure a pasta raiz do repositório como diretório de saída.
+
+Para testar localmente:
+
+```bash
+npm install
+npm run dev
+```
+
+Para validar a versão de produção:
+
+```bash
+npm run build
+npm run preview
+```
