@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-const SYMBOLS = ["🚀","🎮","🌈","🦊","🍕","⚽","🎧","🌻","🐼","🍉","⭐","🧩","🦋","🍩","🎸","🐙","💎","🛸","🦖","🍓","🎯","🐳","🌙","🪐"];
+const SYMBOLS = [0,16,1,17,2,18,3,19,4,20,5,21,6,22,7,23,8,24,9,25,10,26,11,12,13,14,15];
 const LEVELS = {
   easy: { label: "Fácil", pairs: 8, columns: 4 },
   medium: { label: "Médio", pairs: 12, columns: 4 },
@@ -152,7 +152,7 @@ export default function App() {
                 >
                   <span className="card-inner">
                     <span className="face back" aria-hidden="true">✦</span>
-                    <span className="face front" aria-hidden="true">{card.symbol}</span>
+                    <span className="face front card-image" role="img" aria-label={card.symbol < 16 ? "Selo alquímico de Fullmetal Alchemist" : "Personagem de Fullmetal Alchemist"} style={{ backgroundImage: 'url("/cards.webp")', backgroundPosition: `${(card.symbol % 7) * (100 / 6)}% ${Math.floor(card.symbol / 7) * (100 / 3)}%` }} />
                   </span>
                 </button>
               );
