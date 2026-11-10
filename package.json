@@ -1,0 +1,9 @@
+{
+  "name": "memoryplay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jogo da memória estático em HTML, CSS e JavaScript puro",
+  "scripts": {
+    "build": "node -e \"const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true});fs.mkdirSync('dist');for(const file of ['index.html','nebula.svg'])fs.copyFileSync(file,'dist/'+file);console.log('MemoryPlay pronto para publicação em dist/')\""
+  }
+}
