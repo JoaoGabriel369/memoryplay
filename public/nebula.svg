@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" preserveAspectRatio="xMidYMid slice">
+<defs>
+  <radialGradient id="core"><stop offset="0" stop-color="#fff6d7"/><stop offset=".035" stop-color="#ffb34a"/><stop offset=".12" stop-color="#ff251e" stop-opacity=".95"/><stop offset=".38" stop-color="#8d0712" stop-opacity=".55"/><stop offset="1" stop-color="#09030a" stop-opacity="0"/></radialGradient>
+  <radialGradient id="cloud"><stop stop-color="#ff1728" stop-opacity=".9"/><stop offset=".45" stop-color="#8e0718" stop-opacity=".42"/><stop offset="1" stop-color="#09030a" stop-opacity="0"/></radialGradient>
+  <filter id="smoke" x="-30%" y="-30%" width="160%" height="160%">
+    <feTurbulence type="fractalNoise" baseFrequency=".008 .018" numOctaves="4" seed="18" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="95" xChannelSelector="R" yChannelSelector="G"/>
+    <feGaussianBlur stdDeviation="18"/>
+  </filter>
+  <filter id="glow"><feGaussianBlur stdDeviation="22"/></filter>
+</defs>
+<rect width="1200" height="1600" fill="#080308"/>
+<g opacity=".9" filter="url(#smoke)">
+  <path d="M-100 250 Q260 40 530 500 T1300 280 L1300 950 Q900 730 600 950 T-100 1000Z" fill="#790512"/>
+  <path d="M-100 1100 Q250 700 590 930 T1300 820 L1300 1700H-100Z" fill="#5d0714"/>
+  <path d="M80 80 Q360 340 570 690 T1150 800" stroke="#ed1029" stroke-width="190" fill="none" opacity=".48"/>
+  <path d="M-100 1300 Q340 1000 590 800 T1300 470" stroke="#b10a20" stroke-width="130" fill="none" opacity=".55"/>
+</g>
+<ellipse cx="600" cy="790" rx="560" ry="590" fill="url(#cloud)" opacity=".9"/>
+<ellipse cx="600" cy="800" rx="270" ry="300" fill="url(#core)"/>
+<circle cx="600" cy="800" r="25" fill="#fff2cf" filter="url(#glow)"/>
+<circle cx="600" cy="800" r="8" fill="#fff8e8"/>
+<g fill="none" stroke-linecap="round" opacity=".55">
+ <path d="M600 800 C420 620 310 420 140 120" stroke="#ff2034" stroke-width="5"/>
+ <path d="M600 800 C790 600 950 390 1130 100" stroke="#c90d28" stroke-width="7"/>
+ <path d="M600 800 C450 980 250 1190 60 1510" stroke="#e01830" stroke-width="8"/>
+ <path d="M600 800 C770 1000 960 1210 1170 1500" stroke="#a90b20" stroke-width="6"/>
+</g>
+<g fill="#ff5260">
+ <circle cx="220" cy="300" r="3"/><circle cx="970" cy="420" r="2"/><circle cx="350" cy="1120" r="3"/><circle cx="890" cy="1280" r="2"/><circle cx="760" cy="230" r="2"/><circle cx="150" cy="900" r="2"/>
+</g>
+</svg>
