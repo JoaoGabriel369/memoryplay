@@ -92,7 +92,7 @@ export default function App() {
   };
 
   const chooseCard = (index) => {
-    if (locked || flipped.includes(index) || matched.includes(deck[index].symbol) || won) return;
+    if (locked || flipped.length >= 2 || flipped.includes(index) || matched.includes(deck[index].symbol) || won) return;
     if (!started) setStarted(true);
     if (flipped.length === 1) setMoves((value) => value + 1);
     setFlipped((current) => [...current, index]);
