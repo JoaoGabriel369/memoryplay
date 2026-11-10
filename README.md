@@ -40,3 +40,17 @@ py -m http.server 8000
 ## Tecnologias
 
 HTML5, CSS3 e JavaScript (sem frameworks ou dependências externas).
+
+
+## Publicar no Cloudflare Pages
+
+O projeto continua sendo um site estático, mas agora possui um script de build compatível com o fluxo do Cloudflare Pages.
+
+Nas configurações de build do projeto, use:
+
+- **Framework preset:** None (Nenhum)
+- **Build command:** `npm run build`
+- **Build output directory:** `dist`
+- **Root directory:** `/` (raiz do repositório)
+
+O script cria a pasta `dist` e copia para ela o `index.html` e o `nebula.svg`. Não instala dependências externas.
