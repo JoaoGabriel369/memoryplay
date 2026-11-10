@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10172a">
+  <title>MemoryPlay — Jogo da Memória</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1020;--panel:#151e33;--panel2:#1d2943;--text:#f4f7ff;--muted:#aab6cf;--accent:#8b7cff;--accent2:#5de0c0;--gold:#ffd166}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 50% -15%,#29345b 0,transparent 55%),var(--bg);color:var(--text);padding:28px 16px 44px}
+    button{font:inherit}
+    .wrap{max-width:980px;margin:0 auto}
+    header{text-align:center;margin:10px 0 28px}
+    .eyebrow{display:inline-flex;gap:8px;align-items:center;color:var(--accent2);font-size:.78rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+    h1{font-size:clamp(2.2rem,6vw,3.8rem);line-height:1.05;margin:12px 0 10px;letter-spacing:-.055em}
+    h1 span{color:var(--accent2)}
+    .subtitle{color:var(--muted);margin:0;font-size:1rem}
+    .panel{background:linear-gradient(145deg,rgba(27,39,65,.96),rgba(18,27,46,.96));border:1px solid #34415f;border-radius:22px;padding:20px;box-shadow:0 22px 60px #0005}
+    .toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+    .levels{display:flex;gap:8px;flex-wrap:wrap}
+    .level,.restart{border:1px solid #465575;background:#202c48;color:var(--text);padding:10px 15px;border-radius:12px;font-weight:700;cursor:pointer;transition:.18s}
+    .level:hover,.restart:hover{transform:translateY(-2px);border-color:var(--accent2)}
+    .level.active{background:var(--accent);border-color:var(--accent);color:white;box-shadow:0 5px 20px #8b7cff55}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(78px,1fr));gap:9px;flex:1;max-width:420px}
+    .stat{background:#0d1528;border:1px solid #293754;border-radius:13px;text-align:center;padding:10px 8px}
+    .stat small{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;font-weight:800}
+    .stat strong{display:block;font-size:1.35rem;margin-top:2px;font-variant-numeric:tabular-nums}
+    .board{display:grid;gap:10px;perspective:1000px}
+    .board.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .board.cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}
+    .card{border:0;padding:0;background:transparent;aspect-ratio:1/1;min-width:0;cursor:pointer;perspective:800px}
+    .card-inner{height:100%;width:100%;position:relative;transform-style:preserve-3d;transition:transform .42s cubic-bezier(.2,.7,.2,1)}
+    .card.flipped .card-inner,.card.matched .card-inner{transform:rotateY(180deg)}
+    .face{position:absolute;inset:0;display:grid;place-items:center;border-radius:15px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+    .back{background:linear-gradient(145deg,#35456c,#202c4b);border:1px solid #52648e;color:#aebcff;font-size:clamp(1.25rem,4vw,2rem);font-weight:900;box-shadow:inset 0 1px #ffffff18,0 5px 12px #0003}
+    .back:after{content:"✦";opacity:.75}
+    .front{transform:rotateY(180deg);background:linear-gradient(145deg,#f4f6ff,#dce5ff);color:#17213a;border:2px solid #fff;font-size:clamp(1.65rem,5vw,3rem);box-shadow:0 5px 15px #0003}
+    .card:hover:not(.flipped):not(.matched) .back{border-color:var(--accent2);filter:brightness(1.15)}
+    .card.matched{cursor:default}
+    .card.matched .front{background:linear-gradient(145deg,#c9fff0,#8de8d0);border-color:#a8ffe8}
+    .card:focus-visible,.level:focus-visible,.restart:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+    .hint{text-align:center;color:var(--muted);font-size:.9rem;margin:17px 0 0}
+    .hint b{color:var(--text)}
+    .overlay{position:fixed;inset:0;background:#050914c9;display:none;place-items:center;padding:18px;z-index:5;backdrop-filter:blur(7px)}
+    .overlay.show{display:grid}
+    .modal{width:min(440px,100%);background:#192541;border:1px solid #53638b;border-radius:24px;padding:30px;text-align:center;box-shadow:0 25px 90px #0009}
+    .trophy{font-size:3.5rem}
+    .modal h2{font-size:2rem;margin:8px 0}
+    .modal p{color:var(--muted);line-height:1.6}
+    .modal .restart{background:var(--accent);border-color:var(--accent);padding:12px 20px}
+    footer{text-align:center;color:#7886a4;font-size:.78rem;margin-top:20px}
+    @media(max-width:600px){body{padding:18px 10px 30px}.panel{padding:13px;border-radius:17px}.toolbar{align-items:stretch}.levels{justify-content:center}.stats{max-width:none}.board{gap:7px}.face{border-radius:10px}.board.cols-6{gap:5px}.board.cols-6 .face{border-radius:8px}.level{padding:9px 12px}.subtitle{font-size:.9rem}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="eyebrow">✦ DESAFIO DE CONCENTRAÇÃO</div>
+      <h1>Memory<span>Play</span></h1>
+      <p class="subtitle">Encontre todos os pares com o menor número de jogadas!</p>
+    </header>
+    <section class="panel" aria-label="Jogo da memória">
+      <div class="toolbar">
+        <nav class="levels" aria-label="Nível de dificuldade">
+          <button class="level active" data-level="easy" aria-pressed="true">Fácil</button>
+          <button class="level" data-level="medium" aria-pressed="false">Médio</button>
+          <button class="level" data-level="hard" aria-pressed="false">Difícil</button>
+        </nav>
+        <div class="stats" aria-live="polite">
+          <div class="stat"><small>Jogadas</small><strong id="moves">0</strong></div>
+          <div class="stat"><small>Tempo</small><strong id="time">00:00</strong></div>
+          <div class="stat"><small>Pares</small><strong id="pairs">0/8</strong></div>
+        </div>
+        <button class="restart" id="restart" type="button">↻ Reiniciar</button>
+      </div>
+      <div class="board cols-4" id="board" aria-label="Cartas do jogo"></div>
+      <p class="hint">💡 <b>Dica:</b> memorize a posição das cartas para encontrar os pares.</p>
+    </section>
+    <footer>Feito para treinar sua memória • Seu recorde fica salvo neste dispositivo.</footer>
+  </main>
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="win-title">
+    <div class="modal">
+      <div class="trophy">🏆</div>
+      <h2 id="win-title">Parabéns!</h2>
+      <p id="win-message">Você encontrou todos os pares!</p>
+      <button class="restart" id="play-again" type="button">Jogar novamente</button>
+    </div>
+  </div>
+<script>
+(() => {
+  const symbols = ["🚀","🎮","🌈","🦊","🍕","⚽","🎧","🌻","🐼","🍉","⭐","🧩","🦋","🍩","🎸","🐙","💎","🛸","🦖","🍓","🎯","🐳","🌙","🪐"];
+  const settings = {
+    easy: {pairs:8, cols:4, label:"Fácil"},
+    medium: {pairs:12, cols:4, label:"Médio"},
+    hard: {pairs:18, cols:6, label:"Difícil"}
+  };
+  const board = document.querySelector("#board");
+  const movesEl = document.querySelector("#moves");
+  const timeEl = document.querySelector("#time");
+  const pairsEl = document.querySelector("#pairs");
+  const overlay = document.querySelector("#overlay");
+  let level = "easy", first = null, second = null, lock = false;
+  let moves = 0, matched = 0, seconds = 0, timer = null, started = false;
+
+  const shuffle = array => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
+  const formatTime = value => String(Math.floor(value / 60)).padStart(2,"0") + ":" + String(value % 60).padStart(2,"0");
+  function updateStats() {
+    movesEl.textContent = moves;
+    timeEl.textContent = formatTime(seconds);
+    pairsEl.textContent = matched + "/" + settings[level].pairs;
+  }
+  function startTimer() {
+    if (started) return;
+    started = true;
+    timer = setInterval(() => { seconds++; timeEl.textContent = formatTime(seconds); }, 1000);
+  }
+  function stopTimer() { clearInterval(timer); timer = null; }
+  function createCard(symbol, index) {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "card";
+    card.dataset.symbol = symbol;
+    card.setAttribute("aria-label", "Carta " + (index + 1) + ", fechada");
+    card.innerHTML = '<span class="card-inner"><span class="face back" aria-hidden="true"></span><span class="face front" aria-hidden="true">' + symbol + '</span></span>';
+    card.addEventListener("click", () => flipCard(card));
+    return card;
+  }
+  function newGame() {
+    stopTimer();
+    first = second = null; lock = false; moves = matched = seconds = 0; started = false;
+    overlay.classList.remove("show");
+    const config = settings[level];
+    board.className = "board cols-" + config.cols;
+    board.innerHTML = "";
+    const deck = shuffle([...symbols.slice(0, config.pairs), ...symbols.slice(0, config.pairs)]);
+    deck.forEach((symbol, index) => board.appendChild(createCard(symbol, index)));
+    document.querySelectorAll(".level").forEach(button => {
+      const active = button.dataset.level === level;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    updateStats();
+  }
+  function flipCard(card) {
+    if (lock || card === first || card.classList.contains("matched") || card.classList.contains("flipped")) return;
+    startTimer();
+    card.classList.add("flipped");
+    card.setAttribute("aria-label", "Carta revelada: " + card.dataset.symbol);
+    if (!first) { first = card; return; }
+    second = card; moves++; updateStats();
+    if (first.dataset.symbol === second.dataset.symbol) {
+      first.classList.add("matched"); second.classList.add("matched");
+      first.setAttribute("aria-label", "Par encontrado: " + first.dataset.symbol);
+      second.setAttribute("aria-label", "Par encontrado: " + second.dataset.symbol);
+      matched++; first = second = null; updateStats();
+      if (matched === settings[level].pairs) finishGame();
+    } else {
+      lock = true;
+      const a = first, b = second;
+      setTimeout(() => {
+        [a,b].forEach(item => {
+          item.classList.remove("flipped");
+          item.setAttribute("aria-label", "Carta fechada");
+        });
+        first = second = null; lock = false;
+      }, 850);
+    }
+  }
+  function finishGame() {
+    stopTimer();
+    const key = "memoryplay-best-" + level;
+    const previous = Number(localStorage.getItem(key));
+    const isRecord = !previous || moves < previous;
+    if (isRecord) localStorage.setItem(key, String(moves));
+    document.querySelector("#win-title").textContent = isRecord ? "Novo recorde! 🏆" : "Parabéns! 🎉";
+    document.querySelector("#win-message").textContent =
+      "Você encontrou os " + matched + " pares em " + moves + " jogadas e " + formatTime(seconds) + "!";
+    overlay.classList.add("show");
+    document.querySelector("#play-again").focus();
+  }
+  document.querySelectorAll(".level").forEach(button => button.addEventListener("click", () => {
+    if (level !== button.dataset.level) { level = button.dataset.level; newGame(); }
+  }));
+  document.querySelector("#restart").addEventListener("click", newGame);
+  document.querySelector("#play-again").addEventListener("click", newGame);
+  overlay.addEventListener("click", event => { if (event.target === overlay) newGame(); });
+  newGame();
+})();
+</script>
+</body>
+</html>
