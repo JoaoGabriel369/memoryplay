@@ -15,7 +15,7 @@ export default function AuthPanel() {
     fetch("/api/auth/me", { credentials: "same-origin" })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => { if (active && data && data.user) setUser(data.user); })
-      .catch(() => { if (active) setMessage("Não foi possível conectar ao backend local."); });
+      .catch(() => { if (active) setMessage("Não foi possível conectar ao servidor do MemoryPlay."); });
     return () => { active = false; };
   }, []);
 
@@ -32,6 +32,12 @@ export default function AuthPanel() {
         body: JSON.stringify({ name, email, password }),
       });
       const data = await response.json();
+      if (response.status === 202 && data.confirmationRequired) {
+        setMessage(data.message || "Verifique seu e-mail para confirmar a conta.");
+        setMode("login");
+        setPassword("");
+        return;
+      }
       if (!response.ok) throw new Error(data.error || "Não foi possível autenticar.");
       setUser(data.user);
       setPassword("");
